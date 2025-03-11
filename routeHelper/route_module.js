@@ -45,17 +45,35 @@ class routeHelper{
 
     //  function to signup user 
     async sign_up_user(req,res){
-        const {first_name,last_name,profession,phone_no,email,home_address,landlord_name,house_no,no_people_staying}=req.body;
+        const {first_name,date_of_birth,last_name,profession,phone_no,email,home_address,landlord_name,house_no,no_people_staying}=req.body;
         const check_user_exist = await User.findOne({phone_no:phone_no,email:email});
         if(!check_user_exist){
             const create_user_acct=await new User({
-                
+                first_name:first_name,
+                last_name:last_name,
+                date_of_birth:date_of_birth,
+                profession:profession,
+                phone_no:phone_no,
+                home_address:home_address,
+                email:email,
+                landload_name:landlord_name,
+                id_no:this.generate_id_number(5),
             })
+            try{
+                create_user_acct.save();
+                const payload={idNo:id_no}
+                const create_session_token = jwtmodule.sign(payload,this.api_secret_key);
+                res.status(200).json({msg:"signup_successful_go_to_the_hub_for_verification",id_no:payload.idNo,session_id: create_session_token});    
+            }
+            catch(err){
+                res.status(404).json({errmsg:"Something went wrong"})
+            }
         }
         else{
             res.status(200).json({msg:"account already exist"})
         }
     }
+
 
     // function to upload profile pics 
     async upload_profile_pics(req,res){}
