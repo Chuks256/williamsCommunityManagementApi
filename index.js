@@ -1,4 +1,5 @@
 // define modules
+require("./config/db_config")
 const expressModule = require("express");
 const app=expressModule();
 const port = 3304 ;
