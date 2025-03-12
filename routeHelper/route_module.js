@@ -34,6 +34,7 @@ class routeHelper{
         }
     }
 
+  
     //  specially for qrcode :: function to  verify if user is validated or not 
     async is_user_validated(req,res){
         const [user_id_no]=req.body;
@@ -46,7 +47,7 @@ class routeHelper{
             res.status(200).json({msg:true})
         }
     }
-    
+
 
     // function for user to get specific data 
     async get_user_specific_data(req,res){
