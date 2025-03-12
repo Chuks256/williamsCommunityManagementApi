@@ -4,7 +4,7 @@ const {User}=require("../model/user.model");
 const jwt=require("jsonwebtoken");
 
 const superAdminRoute=async(req,res,next)=>{
-    const [Authorization]=req.headers;
+    const {Authorization}=req.headers;
     const validateSessionToken = jwt.verify(process.env.API_SECRET,Authorization);
     const checkUserRole = await User.findOne({id_no:validateSessionToken.idNo});
     if(checkUserRole.role === "admin"){

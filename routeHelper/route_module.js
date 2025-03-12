@@ -5,6 +5,7 @@ const {User}=require("../model/user.model");
 const jwtmodule = require("jsonwebtoken")
 const cryptoModule =require("crypto");
 const {cloudinary} =require("../cloud_config/cloudinary_config");
+const fs = require('fs')
 
 // define route class 
 class routeHelper{
@@ -19,7 +20,6 @@ class routeHelper{
     }
 
     // # User route
-
     async is_server_active(req,res){
         res.status(200).json({msg:"Server is fully active 😎"})
     }
@@ -36,30 +36,29 @@ class routeHelper{
         }
         else{
             const payload={idNo:id_no}
-            const create_session_token = jwtmodule.sign(payload,this.api_secret_key);
+            const create_session_token = jwtmodule.sign(payload,process.env.API_SECRET);
             res.status(200).json({msg:"Signin_successful", session_id: create_session_token});
         }
     }
 
-  
     //  specially for qrcode :: function to  verify if user is validated or not 
     async is_user_validated(req,res){
-        const [user_id_no]=req.body;
-        const get_user_data=await User.findOne({id_no:user_id_no});
+        const {user_id_no}=req.body;
+        const get_user_data=await User.findOne({id_no:user_id_no.toLowerCase()});
         if(get_user_data.status==="invalid"){
-            res.status(404).json({msg:false})
+            res.status(404).json({msg:false, report:'account not verified'})
         }
         else
         if(get_user_data.status==='valid'){
-            res.status(200).json({msg:true})
+            res.status(200).json({msg:true ,report:'account verified'})
         }
     }
 
 
     // function for user to get specific data 
     async get_user_specific_data(req,res){
-        const {Authorization}=req.header;
-        const decodeSessionToken = jwtmodule.verify(Authorization,this.api_secret_key);
+        const {authorization}=req.headers;
+        const decodeSessionToken = jwtmodule.verify(authorization,process.env.API_SECRET);
         const getData = await User.findOne({id_no:decodeSessionToken.idNo});
         res.status(200).json(getData) 
     }
@@ -100,8 +99,8 @@ class routeHelper{
 
     // function to upload profile pics 
     async upload_profile_pics(req,res){
-        const {Authorization}=req.header;
-        const decodeSessionToken = jwtmodule.verify(Authorization,this.api_secret_key);
+        const {authorization}=req.headers;
+        const decodeSessionToken = jwtmodule.verify(authorization,process.env.API_SECRET);
            const getUserData = await User.findOne({id_no:decodeSessionToken.idNo});
            try{
             cloudinary.uploader.upload(req.file.path, async(error, result) => {
@@ -111,6 +110,7 @@ class routeHelper{
                 }
                 if(result){
                     getUserData.profile_pics=result.secure_url;
+                    fs.unlinkSync(req.file.path);
                     await getUserData.save();
                     res.status(200).json({msg:"Profile pics sucessfully uploaded to the cloud"})
                 }
@@ -124,8 +124,8 @@ class routeHelper{
     
     // # Admin route 
     async make_admin_route(req,res){// admin route to make other user admin ! route must only be access by super admin 
-        const [user_db_id]=req.body;
-        const getUserToBeMadeAdmin = await User.findOne({_id:user_db_id});
+        const {user_id_no}=req.body;
+        const getUserToBeMadeAdmin = await User.findOne({_id:user_id_no.toLowerCase()});
             getUserToBeMadeAdmin.role='admin';
             await getUserToBeMadeAdmin.save();
             res.status(200).json({msg:`${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully made an admin`});
@@ -133,8 +133,8 @@ class routeHelper{
 
     // function is only accessed by super admin 
     async remove_admin(req,res){
-        const [user_db_id]=req.body;
-        const getUserToBeMadeAdmin = await User.findOne({_id:user_db_id});
+        const {user_id_no}=req.body;
+        const getUserToBeMadeAdmin = await User.findOne({_id:user_id_no.toLowerCase()});
         getUserToBeMadeAdmin.role='user';
         await getUserToBeMadeAdmin.save();
         res.status(200).json({msg:`😎 ${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully removed from being an admin`});
@@ -145,10 +145,10 @@ class routeHelper{
     
     //  function to update user data 
     async update_user_data(req,res){
-        const [first_name,last_name,dob,profession,phone_no,home_address,home_no,email,landlord_name,no_of_people_staying]=req.body;
-        const {Authorization}=req.headers;
-        const decodeSessionToken = jwtmodule.verify(Authorization,this.api_secret_key);
-        const getUserData=User.findOne({id_no:decodeSessionToken.idNo});
+        const {first_name,last_name,dob,profession,phone_no,home_address,home_no,email,landlord_name,no_of_people_staying}=req.body;
+        const {authorization}=req.headers;
+        const decodeSessionToken = jwtmodule.verify(authorization,process.env.API_SECRET);
+        const getUserData=User.findOne({id_no:decodeSessionToken.idNo.toLowerCase()});
         getUserData.first_name=first_name
         getUserData.last_name=last_name
         getUserData.date_of_birth=dob;
@@ -166,8 +166,8 @@ class routeHelper{
 
     // function toinvalidate user 
     async invalidate_user(req,res){
-        const [user_id_no]=req.body;
-        const validateUserAcct = await User.findOne({id_no:user_id_no});
+        const {user_id_no}=req.body;
+        const validateUserAcct = await User.findOne({id_no:user_id_no.toLowerCase()});
         validateUserAcct.status="invalid";
         await validateUserAcct.save(); 
         res.status(200).json({msg:`${validateUserAcct.first_name} ${validateUserAcct.last_name} account is successfully invalid`})
@@ -178,11 +178,19 @@ class routeHelper{
         const getAllUserData= await User.find({});
         res.status(200).json(getAllUserData);
     }
+
+    
+    // function to get all user data base on provided id 
+    async search_user(req,res){
+        const {user_id_no}=req.body;
+        const getAllUserData= await User.findOne({id_no:user_id_no.toLowerCase()});
+        res.status(200).json(getAllUserData);
+    }
     
     //  function for generating user id crd 
     async generate_user_id_card(req,res){
-        const [user_id_no]=req.body;
-        const getUserData = await User.findOne({id_no:user_id_no});
+        const {user_id_no}=req.body;
+        const getUserData = await User.findOne({id_no:user_id_no.toLowerCase()});
         
         // parse user data gotten from db 
         const parse_user_data={
@@ -201,8 +209,8 @@ class routeHelper{
     
     // function to validate user 
     async validate_user(req,res){
-        const [user_id_no]=req.body;
-        const validateUserAcct = await User.findOne({id_no:user_id_no});
+        const {user_id_no}=req.body;
+        const validateUserAcct = await User.findOne({id_no:user_id_no.toLowerCase()});
         validateUserAcct.status="valid";
         await validateUserAcct.save(); 
         res.status(200).json({msg:`${validateUserAcct.first_name} ${validateUserAcct.last_name} account is successfully validated`})
