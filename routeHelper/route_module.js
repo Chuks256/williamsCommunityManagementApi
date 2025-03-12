@@ -16,8 +16,7 @@ class routeHelper{
         return cryptoModule.randomBytes(num_length).toString('hex');
     }
 
-    // # User route 
-
+    // # User route
     // function to sign in user 
     async sign_in_user(req,res){
         const {last_name,id_no}=req.body;
@@ -34,6 +33,20 @@ class routeHelper{
             res.status(200).json({msg:"Signin_successful", session_id: create_session_token});
         }
     }
+
+    //  specially for qrcode :: function to  verify if user is validated or not 
+    async is_user_validated(req,res){
+        const [user_id_no]=req.body;
+        const get_user_data=await User.findOne({id_no:user_id_no});
+        if(get_user_data.status==="invalid"){
+            res.status(404).json({msg:false})
+        }
+        else
+        if(get_user_data.status==='valid'){
+            res.status(200).json({msg:true})
+        }
+    }
+    
 
     // function for user to get specific data 
     async get_user_specific_data(req,res){
@@ -60,7 +73,7 @@ class routeHelper{
                 id_no:this.generate_id_number(5),
             })
             try{
-                create_user_acct.save();
+                await create_user_acct.save();
                 const payload={idNo:id_no}
                 const create_session_token = jwtmodule.sign(payload,this.api_secret_key);
                 res.status(200).json({msg:"signup_successful_go_to_the_hub_for_verification",id_no:payload.idNo,session_id: create_session_token});    
@@ -78,15 +91,73 @@ class routeHelper{
     // function to upload profile pics 
     async upload_profile_pics(req,res){}
 
+    
     // # Admin route 
-    async make_admin_route(req,res){}
-    async remove_admin(req,res){}
+    async make_admin_route(req,res){// admin route to make other user admin ! route must only be access by super admin 
+        const [user_db_id]=req.body;
+        const getUserToBeMadeAdmin = await User.findOne({_id:user_db_id});
+            getUserToBeMadeAdmin.role='admin';
+            await getUserToBeMadeAdmin.save();
+            res.status(200).json({msg:`${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully made an admin`});
+    }
+
+    // function is only accessed by super admin 
+    async remove_admin(req,res){
+        const [user_db_id]=req.body;
+        const getUserToBeMadeAdmin = await User.findOne({_id:user_db_id});
+        getUserToBeMadeAdmin.role='user';
+        await getUserToBeMadeAdmin.save();
+        res.status(200).json({msg:`😎 ${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully removed from being an admin`});
+    }
+    
     async remove_user(req,res){}
+    
     async update_user_data(req,res){}
-    async invalidate_user(req,res){}
-    async get_all_user_data(req,res){}
-    async generate_user_id_card(req,res){}
-    async validate_user(req,res){}
+    
+
+    // function toinvalidate user 
+    async invalidate_user(req,res){
+        const [user_id_no]=req.body;
+        const validateUserAcct = await User.findOne({id_no:user_id_no});
+        validateUserAcct.status="invalid";
+        await validateUserAcct.save(); 
+        res.status(200).json({msg:`${validateUserAcct.first_name} ${validateUserAcct.last_name} account is successfully invalid`})
+    }
+
+    // function to get all user data
+    async get_all_user_data(req,res){
+        const getAllUserData= await User.find({});
+        res.status(200).json(getAllUserData);
+    }
+    
+    //  function for generating user id crd 
+    async generate_user_id_card(req,res){
+        const [user_id_no]=req.body;
+        const getUserData = await User.findOne({id_no:user_id_no});
+        
+        // parse user data gotten from db 
+        const parse_user_data={
+            Names:{
+                first_name:getUserData.first_name,
+                last_name:getUserData.last_name
+            },
+            profile_pics:getUserData.profile_pics,
+            dob:getUserData.date_of_birth,
+            home_addr:getUserData.home_address,
+            id_no:getUserData.id_no
+        }
+        res.status(200).json(parse_user_data);
+    }
+    
+    // function to validate user 
+    async validate_user(req,res){
+        const [user_id_no]=req.body;
+        const validateUserAcct = await User.findOne({id_no:user_id_no});
+        validateUserAcct.status="valid";
+        await validateUserAcct.save(); 
+        res.status(200).json({msg:`${validateUserAcct.first_name} ${validateUserAcct.last_name} account is successfully validated`})
+    }
+
 
 }
 

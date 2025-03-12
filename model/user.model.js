@@ -53,7 +53,7 @@ role:{
 }
 })
 
-const User = mongooseModule.model(userModel,'User');
+const User = mongooseModule.model('User',userModel);
 
 
 module.exports={User}
