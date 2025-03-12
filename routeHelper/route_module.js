@@ -1,8 +1,10 @@
+
 //  define module 
 require('dotenv').config();
 const {User}=require("../model/user.model");
 const jwtmodule = require("jsonwebtoken")
 const cryptoModule =require("crypto");
+const {cloudinary} =require("../cloud_config/cloudinary_config");
 
 // define route class 
 class routeHelper{
@@ -17,6 +19,7 @@ class routeHelper{
     }
 
     // # User route
+
     // function to sign in user 
     async sign_in_user(req,res){
         const {last_name,id_no}=req.body;
@@ -90,7 +93,27 @@ class routeHelper{
 
 
     // function to upload profile pics 
-    async upload_profile_pics(req,res){}
+    async upload_profile_pics(req,res){
+        const {Authorization}=req.header;
+        const decodeSessionToken = jwtmodule.verify(Authorization,this.api_secret_key);
+           const getUserData = await User.findOne({id_no:decodeSessionToken.idNo});
+           try{
+            cloudinary.uploader.upload(req.file.path, async(error, result) => {
+                if (error) {
+                  console.error(error);
+                  return res.status(500).send('Error uploading Image  to Image Cloud bucket 😥');
+                }
+                if(result){
+                    getUserData.profile_pics=result.secure_url;
+                    await getUserData.save();
+                    res.status(200).json({msg:"Profile pics sucessfully uploaded to the cloud"})
+                }
+            })
+        }
+        catch(err){
+            res.status(403).json({errMsg:"Something went wrong"})
+        }
+    }
 
     
     // # Admin route 
@@ -110,7 +133,8 @@ class routeHelper{
         await getUserToBeMadeAdmin.save();
         res.status(200).json({msg:`😎 ${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully removed from being an admin`});
     }
-    
+
+    // function 
     async remove_user(req,res){}
     
     //  function to update user data 
