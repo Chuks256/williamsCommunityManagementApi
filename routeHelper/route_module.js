@@ -20,6 +20,10 @@ class routeHelper{
 
     // # User route
 
+    async is_server_active(req,res){
+        res.status(200).json({msg:"Server is fully active 😎"})
+    }
+
     // function to sign in user 
     async sign_in_user(req,res){
         const {last_name,id_no}=req.body;
@@ -65,6 +69,7 @@ class routeHelper{
         const {first_name,date_of_birth,last_name,profession,phone_no,email,home_address,landlord_name,house_no,no_people_staying}=req.body;
         const check_user_exist = await User.findOne({phone_no:phone_no,email:email});
         if(!check_user_exist){
+            const generate_user_id_no=cryptoModule.randomBytes(3).toString('hex')
             const create_user_acct=await new User({
                 first_name:first_name,
                 last_name:last_name,
@@ -74,15 +79,16 @@ class routeHelper{
                 home_address:home_address,
                 email:email,
                 landlord_name:landlord_name,
-                id_no:this.generate_id_number(5),
+                id_no:generate_user_id_no
             })
             try{
                 await create_user_acct.save();
-                const payload={idNo:id_no}
-                const create_session_token = jwtmodule.sign(payload,this.api_secret_key);
-                res.status(200).json({msg:"signup_successful_go_to_the_hub_for_verification",id_no:payload.idNo,session_id: create_session_token});    
+                const payload={idNo:generate_user_id_no}
+                const create_session_token = jwtmodule.sign(payload,process.env.API_SECRET);
+                res.status(200).json({msg:"signup_successful_go_to_the_hub_for_verification",id_no:payload.idNo.toUpperCase(),session_id: create_session_token});    
             }
             catch(err){
+                console.log(err)
                 res.status(404).json({errmsg:"Something went wrong"})
             }
         }
@@ -191,6 +197,7 @@ class routeHelper{
         }
         res.status(200).json(parse_user_data);
     }
+    
     
     // function to validate user 
     async validate_user(req,res){

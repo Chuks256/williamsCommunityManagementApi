@@ -22,6 +22,10 @@ const routeObj= new routeHelper();
 
 // define routes 
 
+
+//  server callback route 
+app.get("/api/isServerActive",routeObj.is_server_active);
+
 // user route 
 app.get('/api/get_user_specific_data',isUserVerified,routeObj.get_user_specific_data);
 app.get('/api/is_user_validated',routeObj.is_user_validated);

@@ -10,13 +10,13 @@ const userModel= new mongooseModule.Schema({
         type:String
     },
 date_of_birth:{
-    type:Number
+    type:String 
 },
 profession:{
     type:String
 },
 phone_no:{
-    type:Number
+    type:String
 },
 profile_pics:{
     type:String
