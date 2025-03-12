@@ -70,7 +70,7 @@ class routeHelper{
                 phone_no:phone_no,
                 home_address:home_address,
                 email:email,
-                landload_name:landlord_name,
+                landlord_name:landlord_name,
                 id_no:this.generate_id_number(5),
             })
             try{
@@ -113,7 +113,25 @@ class routeHelper{
     
     async remove_user(req,res){}
     
-    async update_user_data(req,res){}
+    //  function to update user data 
+    async update_user_data(req,res){
+        const [first_name,last_name,dob,profession,phone_no,home_address,home_no,email,landlord_name,no_of_people_staying]=req.body;
+        const {Authorization}=req.headers;
+        const decodeSessionToken = jwtmodule.verify(Authorization,this.api_secret_key);
+        const getUserData=User.findOne({id_no:decodeSessionToken.idNo});
+        getUserData.first_name=first_name
+        getUserData.last_name=last_name
+        getUserData.date_of_birth=dob;
+        getUserData.profession = profession
+        getUserData.phone_no=phone_no
+        getUserData.home_address=home_address;
+        getUserData.home_no = home_no;
+        getUserData.email=email;
+        getUserData.landlord_name=landlord_name;
+        getUserData.no_of_people_staying=no_of_people_staying
+        await getUserData.save();
+        res.status(200).json({msg:'user account successfully updated'})
+    }
     
 
     // function toinvalidate user 

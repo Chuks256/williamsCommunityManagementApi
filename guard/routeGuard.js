@@ -45,4 +45,4 @@ const jwt=require("jsonwebtoken");
     }
 }
 
-module.exports={isUserAdmin,isUserSuperAdmin,isUserVerified}
+module.exports={isUserAdmin,isUserVerified}
