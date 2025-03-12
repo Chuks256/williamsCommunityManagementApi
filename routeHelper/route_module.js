@@ -134,7 +134,7 @@ class routeHelper{
         res.status(200).json({msg:`😎 ${getUserToBeMadeAdmin.first_name}_${getUserToBeMadeAdmin.last_name} is successfully removed from being an admin`});
     }
 
-    // function 
+    // function to be added later :: future addition 
     async remove_user(req,res){}
     
     //  function to update user data 

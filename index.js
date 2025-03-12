@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const {isUserAdmin,isUserVerified}=require("./guard/routeGuard")
 const {superAdminRoute} =require("./guard/superAdminGuard")
 const {routeHelper} = require("./routeHelper/route_module")
+const {upload} = require("./cloud_config/multer_config");
 
 app.use(expressModule.json())
 app.use(expressModule.urlencoded({extended:true}))
@@ -26,7 +27,7 @@ app.get('/api/get_user_specific_data',isUserVerified,routeObj.get_user_specific_
 app.get('/api/is_user_validated',routeObj.is_user_validated);
 app.post('/api/sign_in_user',routeObj.sign_in_user); //workonthis later 
 app.post('/api/sign_up_user',routeObj.sign_up_user);
-
+app.post('/api/upload_user_profile_pic',upload.single('image'),routeObj.upload_profile_pics)
 // admin route 
 app.get('/api/admin/get_all_user_data',isUserAdmin,routeObj.get_all_user_data);
 app.post('/api/admin/update_user',isUserAdmin,routeObj.update_user_data)
