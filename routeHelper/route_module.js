@@ -31,7 +31,7 @@ class routeHelper{
             last_name:last_name,
             id_no:id_no
         });
-        if(!checkUserExist){
+        if(checkUserExist.length===0){
             res.status(404).json({errMsg:"Wrong Credentials provided"});
         }
         else{
